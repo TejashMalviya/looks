@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Comparison - Funny Feedback</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-top: 20px;
+        }
+
+        #upload-section {
+            margin-top: 30px;
+        }
+
+        input[type="file"] {
+            margin: 10px;
+            padding: 10px;
+            font-size: 1em;
+        }
+
+        #compare-btn {
+            padding: 15px 25px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #compare-btn:hover {
+            background-color: #2980b9;
+        }
+
+        #result {
+            margin-top: 40px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #ecf0f1;
+        }
+
+        #winner-image {
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .suggestions {
+            font-size: 1.2em;
+            color: #2c3e50;
+        }
+
+        .suggestions p {
+            margin: 10px;
+            font-style: italic;
+        }
+
+        .loading {
+            font-size: 1.5em;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Photo Comparison - Which One Looks Better?</h1>
+
+    <div id="upload-section">
+        <label for="photo1">Upload First Photo:</label>
+        <input type="file" id="photo1" accept="image/*" onchange="loadImage(event, 1)">
+        
+        <label for="photo2">Upload Second Photo:</label>
+        <input type="file" id="photo2" accept="image/*" onchange="loadImage(event, 2)">
+
+        <div>
+            <button id="compare-btn" onclick="comparePhotos()" disabled>Compare Photos</button>
+        </div>
+    </div>
+
+    <div id="result" style="display: none;">
+        <h2>Result: <span id="winner-title"></span></h2>
+        <img id="winner-image" src="" alt="Winner Photo">
+        <div id="suggestions" class="suggestions"></div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        Analyzing photos... please wait.
+    </div>
+
+    <script>
+        let photo1 = null;
+        let photo2 = null;
+
+        // Load the images
+        function loadImage(event, photoNumber) {
+            let file = event.target.files[0];
+            let reader = new FileReader();
+
+            reader.onload = function(e) {
+                if (photoNumber === 1) {
+                    photo1 = e.target.result;
+                } else {
+                    photo2 = e.target.result;
+                }
+
+                // Enable Compare button if both photos are uploaded
+                if (photo1 && photo2) {
+                    document.getElementById('compare-btn').disabled = false;
+                }
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // Compare photos and give feedback
+        function comparePhotos() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            setTimeout(() => {
+                // Simple random logic for comparing
+                let winner = Math.random() > 0.5 ? 1 : 2;
+                let winnerImage = winner === 1 ? photo1 : photo2;
+                let winnerTitle = winner === 1 ? "Photo 1 Wins!" : "Photo 2 Wins!";
+                let suggestions = getSuggestions(winner);
+
+                // Show the result
+                document.getElementById('winner-title').innerText = winnerTitle;
+                document.getElementById('winner-image').src = winnerImage;
+                document.getElementById('suggestions').innerHTML = suggestions;
+
+                // Hide loading spinner and show result
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+            }, 1500);
+        }
+
+        // Generate funny suggestions
+        function getSuggestions(winner) {
+            let suggestions = "";
+            let winnerIsChikna = Math.random() > 0.5; // Randomly decide if the winner is without beard
+
+            if (winnerIsChikna) {
+                suggestions += "<p><strong>Chikna Alert!</strong> Looks like you’ve never met a razor.</p>";
+            } else {
+                suggestions += "<p><strong>Beard Level: 100!</strong> A true beard king!</p>";
+            }
+
+            if (winner === 1) {
+                suggestions += "<p><em>Photo 1: You look like a Bollywood hero!</em></p>";
+            } else {
+                suggestions += "<p><em>Photo 2: You look like you're ready for a fashion show!</em></p>";
+            }
+
+            suggestions += "<p><em>Keep rocking that confidence!</em></p>";
+
+            return suggestions;
+        }
+    </script>
+</body>
+</html>
