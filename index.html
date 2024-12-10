@@ -10,7 +10,7 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            background: linear-gradient(to right, #141e30, #243b55);
             color: white;
             text-align: center;
         }
@@ -77,7 +77,7 @@
 <body>
     <header>
         <h1>AI Face Comparison</h1>
-        <p>Upload two photos and let AI decide who's the best-looking!</p>
+        <p>Upload two photos and let AI decide who's better looking!</p>
     </header>
     <div class="container">
         <div class="upload-section">
@@ -85,8 +85,18 @@
             <input type="file" id="photo1" accept="image/*" onchange="loadImagePreview('preview1', this)">
             <img id="preview1" src="#" alt="Photo 1 Preview" style="display: none;">
             <br>
+            <select id="gender1">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+            <br>
             <input type="file" id="photo2" accept="image/*" onchange="loadImagePreview('preview2', this)">
             <img id="preview2" src="#" alt="Photo 2 Preview" style="display: none;">
+            <br>
+            <select id="gender2">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
             <br>
             <button onclick="compareFaces()">Compare Faces</button>
         </div>
@@ -108,9 +118,23 @@
             }
         }
 
+        function getReaction(gender, score, beard = false) {
+            if (gender === "female") {
+                if (score > 75) return "Jakaas dikh rahi h tu to! 😍";
+                if (score > 40) return "Yaar tu mediocur h, improve kar thopdaa tera. 😅";
+                return "Chee yaar, kya thopda h tera! Sara mood kharab kar diya. 🤮";
+            } else if (gender === "male") {
+                if (score > 75) return "Bro, accha dikh raha h tu! Ladki patayi ke nahi? 😎";
+                if (score > 40) return "Bhai tu idhar bhi average reh gaya. Chee yaar! 😐";
+                return "Bro, mar jaa, aisa saada hua thopda lekar! 😭" + (beard ? "" : " (Chikna alert! 🚨)");
+            }
+        }
+
         function compareFaces() {
             const photo1 = document.getElementById('photo1').files[0];
             const photo2 = document.getElementById('photo2').files[0];
+            const gender1 = document.getElementById('gender1').value;
+            const gender2 = document.getElementById('gender2').value;
 
             if (!photo1 || !photo2) {
                 alert('Please upload both photos!');
@@ -124,39 +148,17 @@
             const face1Score = Math.floor(Math.random() * 100) + 1;
             const face2Score = Math.floor(Math.random() * 100) + 1;
 
-            // Determine winner and generate custom messages
-            let verdict;
-            if (face1Score > face2Score) {
-                verdict = `Face 1 wins with ${face1Score} points!`;
-                if (face1Score > 75) {
-                    verdict += " Looking stunning! 😍";
-                } else {
-                    verdict += " Nice look, keep it up! 😊";
-                }
-            } else if (face2Score > face1Score) {
-                verdict = `Face 2 wins with ${face2Score} points!`;
-                if (face2Score > 75) {
-                    verdict += " Looking awesome! ✨";
-                } else {
-                    verdict += " Great vibes! 🎉";
-                }
-            } else {
-                verdict = "It's a tie! Both look amazing! 🎭";
-            }
+            // Add mock beard check for men
+            const beard1 = Math.random() > 0.5; // 50% chance of having a beard
+            const beard2 = Math.random() > 0.5; // 50% chance of having a beard
 
-            // Add jokes for "bad" scores
-            if (face1Score < 30) {
-                verdict += "<br> Face 1: Maybe try a mask next time! 😅";
-            }
-            if (face2Score < 30) {
-                verdict += "<br> Face 2: Oops, tough day for the camera! 🤭";
-            }
+            const reaction1 = getReaction(gender1, face1Score, gender1 === "male" && !beard1);
+            const reaction2 = getReaction(gender2, face2Score, gender2 === "male" && !beard2);
 
             resultsDiv.innerHTML = `
                 <h3>Results:</h3>
-                <p>Face 1 Score: ${face1Score}/100</p>
-                <p>Face 2 Score: ${face2Score}/100</p>
-                <p>${verdict}</p>
+                <p>Face 1 (${gender1}): ${face1Score}/100 - ${reaction1}</p>
+                <p>Face 2 (${gender2}): ${face2Score}/100 - ${reaction2}</p>
             `;
         }
     </script>
