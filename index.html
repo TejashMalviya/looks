@@ -3,170 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Comparison - Funny Feedback</title>
+    <title>AI Face Comparison</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f8ff;
+            font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color: white;
             text-align: center;
         }
-
+        header {
+            padding: 20px;
+            background-color: #1a1a1a;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        }
         h1 {
-            color: #2c3e50;
+            margin: 0;
             font-size: 2.5em;
-            margin-top: 20px;
+            color: #00c6ff;
         }
-
-        #upload-section {
-            margin-top: 30px;
+        .container {
+            padding: 20px;
         }
-
+        .upload-section {
+            margin: 20px auto;
+            max-width: 800px;
+            background: #ffffff10;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
         input[type="file"] {
-            margin: 10px;
+            margin: 10px 0;
             padding: 10px;
-            font-size: 1em;
-        }
-
-        #compare-btn {
-            padding: 15px 25px;
-            background-color: #3498db;
-            color: white;
+            background: #00c6ff;
             border: none;
             border-radius: 5px;
-            font-size: 1.2em;
             cursor: pointer;
+            color: white;
+        }
+        button {
             margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #00c6ff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
         }
-
-        #compare-btn:hover {
-            background-color: #2980b9;
+        button:hover {
+            background-color: #0077b5;
         }
-
-        #result {
-            margin-top: 40px;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #ecf0f1;
-        }
-
-        #winner-image {
-            max-width: 80%;
-            height: auto;
-            margin-bottom: 20px;
-        }
-
-        .suggestions {
+        .results {
+            margin-top: 20px;
             font-size: 1.2em;
-            color: #2c3e50;
+            background: #ffffff10;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
-
-        .suggestions p {
+        img {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
             margin: 10px;
-            font-style: italic;
-        }
-
-        .loading {
-            font-size: 1.5em;
-            color: #e74c3c;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
 <body>
-
-    <h1>Photo Comparison - Which One Looks Better?</h1>
-
-    <div id="upload-section">
-        <label for="photo1">Upload First Photo:</label>
-        <input type="file" id="photo1" accept="image/*" onchange="loadImage(event, 1)">
-        
-        <label for="photo2">Upload Second Photo:</label>
-        <input type="file" id="photo2" accept="image/*" onchange="loadImage(event, 2)">
-
-        <div>
-            <button id="compare-btn" onclick="comparePhotos()" disabled>Compare Photos</button>
+    <header>
+        <h1>AI Face Comparison</h1>
+        <p>Upload two photos and let AI decide who's the best-looking!</p>
+    </header>
+    <div class="container">
+        <div class="upload-section">
+            <h2>Upload Photos</h2>
+            <input type="file" id="photo1" accept="image/*" onchange="loadImagePreview('preview1', this)">
+            <img id="preview1" src="#" alt="Photo 1 Preview" style="display: none;">
+            <br>
+            <input type="file" id="photo2" accept="image/*" onchange="loadImagePreview('preview2', this)">
+            <img id="preview2" src="#" alt="Photo 2 Preview" style="display: none;">
+            <br>
+            <button onclick="compareFaces()">Compare Faces</button>
+        </div>
+        <div class="results" id="results">
+            <!-- Results will be displayed here -->
         </div>
     </div>
-
-    <div id="result" style="display: none;">
-        <h2>Result: <span id="winner-title"></span></h2>
-        <img id="winner-image" src="" alt="Winner Photo">
-        <div id="suggestions" class="suggestions"></div>
-    </div>
-
-    <div id="loading" class="loading" style="display: none;">
-        Analyzing photos... please wait.
-    </div>
-
     <script>
-        let photo1 = null;
-        let photo2 = null;
+        function loadImagePreview(previewId, input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById(previewId);
+                    preview.src = e.target.result;
+                    preview.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
-        // Load the images
-        function loadImage(event, photoNumber) {
-            let file = event.target.files[0];
-            let reader = new FileReader();
+        function compareFaces() {
+            const photo1 = document.getElementById('photo1').files[0];
+            const photo2 = document.getElementById('photo2').files[0];
 
-            reader.onload = function(e) {
-                if (photoNumber === 1) {
-                    photo1 = e.target.result;
+            if (!photo1 || !photo2) {
+                alert('Please upload both photos!');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "<p>Processing... Please wait.</p>";
+
+            // Mock scoring logic with random values
+            const face1Score = Math.floor(Math.random() * 100) + 1;
+            const face2Score = Math.floor(Math.random() * 100) + 1;
+
+            // Determine winner and generate custom messages
+            let verdict;
+            if (face1Score > face2Score) {
+                verdict = `Face 1 wins with ${face1Score} points!`;
+                if (face1Score > 75) {
+                    verdict += " Looking stunning! 😍";
                 } else {
-                    photo2 = e.target.result;
+                    verdict += " Nice look, keep it up! 😊";
                 }
-
-                // Enable Compare button if both photos are uploaded
-                if (photo1 && photo2) {
-                    document.getElementById('compare-btn').disabled = false;
+            } else if (face2Score > face1Score) {
+                verdict = `Face 2 wins with ${face2Score} points!`;
+                if (face2Score > 75) {
+                    verdict += " Looking awesome! ✨";
+                } else {
+                    verdict += " Great vibes! 🎉";
                 }
-            };
-
-            reader.readAsDataURL(file);
-        }
-
-        // Compare photos and give feedback
-        function comparePhotos() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('result').style.display = 'none';
-
-            setTimeout(() => {
-                // Simple random logic for comparing
-                let winner = Math.random() > 0.5 ? 1 : 2;
-                let winnerImage = winner === 1 ? photo1 : photo2;
-                let winnerTitle = winner === 1 ? "Photo 1 Wins!" : "Photo 2 Wins!";
-                let suggestions = getSuggestions(winner);
-
-                // Show the result
-                document.getElementById('winner-title').innerText = winnerTitle;
-                document.getElementById('winner-image').src = winnerImage;
-                document.getElementById('suggestions').innerHTML = suggestions;
-
-                // Hide loading spinner and show result
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('result').style.display = 'block';
-            }, 1500);
-        }
-
-        // Generate funny suggestions
-        function getSuggestions(winner) {
-            let suggestions = "";
-            let winnerIsChikna = Math.random() > 0.5; // Randomly decide if the winner is without beard
-
-            if (winnerIsChikna) {
-                suggestions += "<p><strong>Chikna Alert!</strong> Looks like you’ve never met a razor.</p>";
             } else {
-                suggestions += "<p><strong>Beard Level: 100!</strong> A true beard king!</p>";
+                verdict = "It's a tie! Both look amazing! 🎭";
             }
 
-            if (winner === 1) {
-                suggestions += "<p><em>Photo 1: You look like a Bollywood hero!</em></p>";
-            } else {
-                suggestions += "<p><em>Photo 2: You look like you're ready for a fashion show!</em></p>";
+            // Add jokes for "bad" scores
+            if (face1Score < 30) {
+                verdict += "<br> Face 1: Maybe try a mask next time! 😅";
+            }
+            if (face2Score < 30) {
+                verdict += "<br> Face 2: Oops, tough day for the camera! 🤭";
             }
 
-            suggestions += "<p><em>Keep rocking that confidence!</em></p>";
-
-            return suggestions;
+            resultsDiv.innerHTML = `
+                <h3>Results:</h3>
+                <p>Face 1 Score: ${face1Score}/100</p>
+                <p>Face 2 Score: ${face2Score}/100</p>
+                <p>${verdict}</p>
+            `;
         }
     </script>
 </body>
