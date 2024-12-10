@@ -1,173 +1,204 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Comparison - Funny Feedback</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f8ff;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
+import os
+import cv2
+import numpy as np
+from flask import Flask, render_template, request, jsonify
+from werkzeug.utils import secure_filename
+import random
 
-        h1 {
-            color: #2c3e50;
-            font-size: 2.5em;
-            margin-top: 20px;
-        }
+# Initialize Flask app
+app = Flask(__name__)
 
-        #upload-section {
-            margin-top: 30px;
-        }
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
-        input[type="file"] {
-            margin: 10px;
-            padding: 10px;
-            font-size: 1em;
-        }
+# Set up file upload folder
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-        #compare-btn {
-            padding: 15px 25px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin-top: 20px;
-        }
+# Function to check if the uploaded file is an allowed image
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-        #compare-btn:hover {
-            background-color: #2980b9;
-        }
+# Function to analyze image and give a funny reaction
+def analyze_image(image_path):
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        #result {
-            margin-top: 40px;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #ecf0f1;
-        }
+    # Load Haar Cascade for face detection
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    
+    # Detect faces
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    
+    if len(faces) == 0:
+        return "No face detected"
 
-        #winner-image {
-            max-width: 80%;
-            height: auto;
-            margin-bottom: 20px;
-        }
+    # Simple aesthetic judgment with fun reactions
+    reactions = [
+        "Looking sharp!",
+        "Is that a movie star?",
+        "Charming smile, isn't it?",
+        "Chikna vibes! 😎",
+        "Looking like a Bollywood hero!",
+        "You sure you don't belong on a magazine cover?",
+        "Sizzling hot looks!",
+        "Superstar energy!"
+    ]
+    
+    return random.choice(reactions)
 
-        .suggestions {
-            font-size: 1.2em;
-            color: #2c3e50;
-        }
+# Route to serve the upload page
+@app.route('/')
+def index():
+    return '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI Photo Comparison - Who Looks Better?</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f8ff;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+            }
 
-        .suggestions p {
-            margin: 10px;
-            font-style: italic;
-        }
+            h1 {
+                color: #3498db;
+                font-size: 2.5em;
+                margin-top: 20px;
+            }
 
-        .loading {
-            font-size: 1.5em;
-            color: #e74c3c;
-        }
-    </style>
-</head>
-<body>
+            input[type="file"] {
+                margin: 10px;
+                font-size: 1.2em;
+            }
 
-    <h1>Photo Comparison - Which One Looks Better?</h1>
+            #upload-btn {
+                padding: 15px 25px;
+                background-color: #3498db;
+                color: white;
+                border: none;
+                font-size: 1.2em;
+                cursor: pointer;
+            }
 
-    <div id="upload-section">
-        <label for="photo1">Upload First Photo:</label>
-        <input type="file" id="photo1" accept="image/*" onchange="loadImage(event, 1)">
-        
-        <label for="photo2">Upload Second Photo:</label>
-        <input type="file" id="photo2" accept="image/*" onchange="loadImage(event, 2)">
+            #upload-btn:hover {
+                background-color: #2980b9;
+            }
 
-        <div>
-            <button id="compare-btn" onclick="comparePhotos()" disabled>Compare Photos</button>
-        </div>
+            #result {
+                margin-top: 40px;
+                display: none;
+            }
+
+            #loading {
+                display: none;
+                font-size: 1.5em;
+                color: #e74c3c;
+            }
+        </style>
+    </head>
+    <body>
+
+    <h1>AI Photo Comparison: Who's Got the Best Look?</h1>
+
+    <div>
+        <input type="file" id="photo1" accept="image/*">
+        <input type="file" id="photo2" accept="image/*">
+        <br><br>
+        <button id="upload-btn" onclick="uploadPhotos()">Upload and Compare</button>
     </div>
 
-    <div id="result" style="display: none;">
-        <h2>Result: <span id="winner-title"></span></h2>
-        <img id="winner-image" src="" alt="Winner Photo">
-        <div id="suggestions" class="suggestions"></div>
-    </div>
+    <div id="loading">Analyzing photos...</div>
 
-    <div id="loading" class="loading" style="display: none;">
-        Analyzing photos... please wait.
+    <div id="result">
+        <h2 id="winner"></h2>
+        <p id="feedback"></p>
+        <p><strong>Photo 1 result:</strong> <span id="result1"></span></p>
+        <p><strong>Photo 2 result:</strong> <span id="result2"></span></p>
     </div>
 
     <script>
-        let photo1 = null;
-        let photo2 = null;
+        function uploadPhotos() {
+            const file1 = document.getElementById('photo1').files[0];
+            const file2 = document.getElementById('photo2').files[0];
 
-        // Load the images
-        function loadImage(event, photoNumber) {
-            let file = event.target.files[0];
-            let reader = new FileReader();
+            if (!file1 || !file2) {
+                alert('Please upload two photos.');
+                return;
+            }
 
-            reader.onload = function(e) {
-                if (photoNumber === 1) {
-                    photo1 = e.target.result;
-                } else {
-                    photo2 = e.target.result;
-                }
+            const formData = new FormData();
+            formData.append('file1', file1);
+            formData.append('file2', file2);
 
-                // Enable Compare button if both photos are uploaded
-                if (photo1 && photo2) {
-                    document.getElementById('compare-btn').disabled = false;
-                }
-            };
-
-            reader.readAsDataURL(file);
-        }
-
-        // Compare photos and give feedback
-        function comparePhotos() {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').style.display = 'none';
 
-            setTimeout(() => {
-                // Simple random logic for comparing
-                let winner = Math.random() > 0.5 ? 1 : 2;
-                let winnerImage = winner === 1 ? photo1 : photo2;
-                let winnerTitle = winner === 1 ? "Photo 1 Wins!" : "Photo 2 Wins!";
-                let suggestions = getSuggestions(winner);
-
-                // Show the result
-                document.getElementById('winner-title').innerText = winnerTitle;
-                document.getElementById('winner-image').src = winnerImage;
-                document.getElementById('suggestions').innerHTML = suggestions;
-
-                // Hide loading spinner and show result
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('result').style.display = 'block';
-            }, 1500);
-        }
-
-        // Generate funny suggestions
-        function getSuggestions(winner) {
-            let suggestions = "";
-            let winnerIsChikna = Math.random() > 0.5; // Randomly decide if the winner is without beard
-
-            if (winnerIsChikna) {
-                suggestions += "<p><strong>Chikna Alert!</strong> Looks like you’ve never met a razor.</p>";
-            } else {
-                suggestions += "<p><strong>Beard Level: 100!</strong> A true beard king!</p>";
-            }
-
-            if (winner === 1) {
-                suggestions += "<p><em>Photo 1: You look like a Bollywood hero!</em></p>";
-            } else {
-                suggestions += "<p><em>Photo 2: You look like you're ready for a fashion show!</em></p>";
-            }
-
-            suggestions += "<p><em>Keep rocking that confidence!</em></p>";
-
-            return suggestions;
+                document.getElementById('winner').textContent = data.winner;
+                document.getElementById('feedback').textContent = data.feedback;
+                document.getElementById('result1').textContent = data.image1_result;
+                document.getElementById('result2').textContent = data.image2_result;
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                alert('Error uploading images.');
+            });
         }
     </script>
-</body>
-</html>
+
+    </body>
+    </html>
+    '''
+
+# Route to handle the photo upload and analysis
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    if 'file1' not in request.files or 'file2' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file1 = request.files['file1']
+    file2 = request.files['file2']
+
+    if file1 and allowed_file(file1.filename) and file2 and allowed_file(file2.filename):
+        filename1 = secure_filename(file1.filename)
+        filename2 = secure_filename(file2.filename)
+
+        filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
+        filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
+
+        file1.save(filepath1)
+        file2.save(filepath2)
+
+        # Analyze both images
+        result1 = analyze_image(filepath1)
+        result2 = analyze_image(filepath2)
+
+        # Compare the results (simplified logic)
+        winner = "Photo 1" if random.choice([True, False]) else "Photo 2"
+        feedback = f"Looking great! The winner is: {winner}."
+
+        # Return the result and feedback
+        return jsonify({
+            'winner': winner,
+            'feedback': feedback,
+            'image1_result': result1,
+            'image2_result': result2
+        })
+
+    return jsonify({'error': 'Invalid file format'}), 400
+
+if __name__ == '__main__':
+    app.run(debug=True)
