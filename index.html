@@ -33,6 +33,7 @@
             max-width: 800px;
             background: #ffffff10;
             padding: 20px;
+
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
@@ -41,6 +42,7 @@
             padding: 10px;
             background: #00c6ff;
             border: none;
+            border-radius: 10px;
             border-radius: 5px;
             cursor: pointer;
             color: white;
@@ -49,9 +51,10 @@
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 1em;
+    border-radius: 10px;
             background-color: #00c6ff;
             border: none;
-            border-radius: 5px;
+         
             cursor: pointer;
             transition: background 0.3s;
         }
@@ -82,7 +85,7 @@
     </header>
     <div class="container">
         <div class="upload-section">
-            <h2>Upload Photos</h2>
+            <h2 style="border-radius: 10px;">Upload Photos</h2>
             <input type="file" id="photo1" accept="image/*" onchange="loadImagePreview('preview1', this)">
             <img id="preview1" src="#" alt="Photo 1 Preview" style="display: none;">
             <br>
@@ -102,8 +105,7 @@
             <button onclick="compareFaces()">Compare Faces</button>
         </div>
         <div class="results" id="results">
-        
-        </div>
+           
     </div>
     <script>
         function loadImagePreview(previewId, input) {
@@ -145,13 +147,13 @@
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = "<p>Processing... Please wait.</p>";
 
-            // Mock scoring logic with random values
+          
             const face1Score = Math.floor(Math.random() * 100) + 1;
             const face2Score = Math.floor(Math.random() * 100) + 1;
 
-            // Add mock beard check for men
-            const beard1 = Math.random() > 0.5; // 50% chance of having a beard
-            const beard2 = Math.random() > 0.5; // 50% chance of having a beard
+
+            const beard1 = Math.random() > 0.5; 
+            const beard2 = Math.random() > 0.5; 
 
             const reaction1 = getReaction(gender1, face1Score, gender1 === "male" && !beard1);
             const reaction2 = getReaction(gender2, face2Score, gender2 === "male" && !beard2);
@@ -163,6 +165,6 @@
             `;
         }
     </script>
-      <nav style="color: rgb(157, 157, 238);">BY ERRORS CLUB</nav>
+    <nav style="color: rgb(157, 157, 238);">BY ERRORS CLUB</nav>
 </body>
 </html>
